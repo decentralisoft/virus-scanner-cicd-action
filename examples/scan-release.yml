@@ -1,0 +1,39 @@
+# Scan every release artifact before it is published, and attach the report.
+#
+# Add your API key as a repository secret named VIRUSPURGE_API_KEY
+# (Settings → Secrets and variables → Actions).
+
+name: Scan release artifacts
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write # to upload the report to the release
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download the release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "${{ github.event.release.tag_name }}" --repo "$GITHUB_REPOSITORY" --dir dist
+
+      - name: Scan for malware
+        id: scan
+        uses: decentralisoft/scan-action@v1
+        with:
+          api-key: ${{ secrets.VIRUSPURGE_API_KEY }}
+          files: |
+            dist/**
+
+      - name: Attach the scan report to the release
+        if: always() && steps.scan.outputs.report != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp "${{ steps.scan.outputs.report }}" virus-scan-report.json
+          gh release upload "${{ github.event.release.tag_name }}" virus-scan-report.json --clobber --repo "$GITHUB_REPOSITORY"

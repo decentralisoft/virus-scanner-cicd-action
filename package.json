@@ -1,0 +1,41 @@
+{
+  "name": "viruspurge",
+  "version": "0.1.0",
+  "description": "Scan files for malware with the Virus Purge API — from your terminal or CI.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "viruspurge": "bin/viruspurge.js"
+  },
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "action.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "antivirus",
+    "malware",
+    "virus-scan",
+    "clamav",
+    "yara",
+    "ci",
+    "github-action"
+  ],
+  "homepage": "https://viruspurge.com/docs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/decentralisoft/scan-action.git"
+  },
+  "bugs": "https://github.com/decentralisoft/scan-action/issues"
+}

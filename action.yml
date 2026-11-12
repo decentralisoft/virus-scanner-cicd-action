@@ -1,0 +1,50 @@
+name: Virus Purge Scan
+description: Scan build outputs and release artifacts for malware with ClamAV, YARA and image-payload checks.
+author: Virus Purge
+branding:
+  icon: shield
+  color: green
+
+inputs:
+  api-key:
+    description: Your Virus Purge API key (personal vp_… or organization vpo_…). Store it as a secret.
+    required: true
+  files:
+    description: |
+      Files to scan, one path, directory or glob per line. Supports *, **, ?, [abc], {a,b}.
+      Prefix a line with ! to exclude, e.g. "!dist/**/*.map".
+    required: true
+  fail-on-infected:
+    description: Fail the step when malware is found.
+    default: "true"
+  fail-on-error:
+    description: Fail the step when a file could not be scanned.
+    default: "true"
+  if-no-files-found:
+    description: What to do when the patterns match nothing — error, warn or ignore.
+    default: error
+  concurrency:
+    description: Files scanned in parallel.
+    default: "4"
+  timeout:
+    description: Seconds to wait for a verdict when an upload connection drops.
+    default: "120"
+  api-url:
+    description: API base URL.
+    default: https://viruspurge.com
+
+outputs:
+  result:
+    description: clean, infected, error, or none when nothing was scanned.
+  scanned:
+    description: Number of files scanned.
+  infected:
+    description: Number of infected files.
+  errors:
+    description: Number of files that could not be scanned.
+  report:
+    description: Path to the JSON report (every file's verdict, threats, SHA-256 and scan ID).
+
+runs:
+  using: node24
+  main: src/action-main.js
