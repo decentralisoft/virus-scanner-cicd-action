@@ -24,7 +24,7 @@ jobs:
 
       - name: Scan for malware
         id: scan
-        uses: decentralisoft/scan-action@v1
+        uses: decentralisoft/virus-scanner-cicd-action@v1
         with:
           api-key: ${{ secrets.VIRUSPURGE_API_KEY }}
           files: |

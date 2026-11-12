@@ -71,7 +71,7 @@ signed — see [Verifying signatures](https://viruspurge.com/docs#webhooks).
 Requires a Virus Purge **Enterprise** plan.
 
 ```yaml
-- uses: decentralisoft/scan-action@v1
+- uses: decentralisoft/virus-scanner-cicd-action@v1
   id: scan
   with:
     api-key: ${{ secrets.VIRUSPURGE_API_KEY }}

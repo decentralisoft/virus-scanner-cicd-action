@@ -35,7 +35,7 @@
   "homepage": "https://viruspurge.com/docs",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/decentralisoft/scan-action.git"
+    "url": "git+https://github.com/decentralisoft/virus-scanner-cicd-action.git"
   },
-  "bugs": "https://github.com/decentralisoft/scan-action/issues"
+  "bugs": "https://github.com/decentralisoft/virus-scanner-cicd-action/issues"
 }
