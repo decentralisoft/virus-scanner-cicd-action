@@ -112,8 +112,13 @@ export function createClient({
     apiUrl: base,
 
     /** Reserve a scan and get an upload permit. */
-    createScan: ({ fileName, fileSize, fileMimeType }) =>
-      call("POST", "/api/v1/scan", { fileName, fileSize, ...(fileMimeType ? { fileMimeType } : {}) }),
+    createScan: ({ fileName, fileSize, fileMimeType, ci }) =>
+      call("POST", "/api/v1/scan", {
+        fileName,
+        fileSize,
+        ...(fileMimeType ? { fileMimeType } : {}),
+        ...(ci ? { ci } : {}),
+      }),
 
     /** The recorded verdict of a scan. */
     getScan: (scanId) => call("GET", `/api/v1/scan/${encodeURIComponent(scanId)}`),

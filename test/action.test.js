@@ -22,7 +22,7 @@ before(async () => {
 after(() => server.close());
 
 /** Run the action the way the runner does: inputs in env, results in files. */
-async function runAction(inputs) {
+async function runAction(inputs, extraEnv = {}) {
   const runnerTemp = await mkdtemp(join(tmpdir(), "vp-runner-"));
   const outputFile = join(runnerTemp, "output");
   const summaryFile = join(runnerTemp, "summary");
@@ -36,6 +36,7 @@ async function runAction(inputs) {
     GITHUB_STEP_SUMMARY: summaryFile,
     RUNNER_TEMP: runnerTemp,
     "INPUT_API-URL": server.url,
+    ...extraEnv,
     ...Object.fromEntries(Object.entries(inputs).map(([k, v]) => [`INPUT_${k.toUpperCase()}`, v])),
   };
   const { code, stdout } = await new Promise((resolve) => {
@@ -79,6 +80,38 @@ test("no matching files is an error unless told otherwise", async () => {
   const ignored = await runAction({ "api-key": "good-key", files: "out/**", "if-no-files-found": "ignore" });
   assert.equal(ignored.code, 0);
   assert.equal(ignored.outputs.result, "none");
+});
+
+const GITHUB_RUN = {
+  GITHUB_REPOSITORY: "acme/app",
+  GITHUB_SHA: "67207a30c316e85bb2331b4dbd1acda9729a4e5a",
+  GITHUB_REF: "refs/heads/main",
+  GITHUB_WORKFLOW: "Release",
+  GITHUB_RUN_ID: "42",
+  GITHUB_RUN_ATTEMPT: "1",
+  GITHUB_ACTOR: "octocat",
+};
+
+test("each scan carries the repository, commit and run it came from", async () => {
+  const before = server.received.length;
+  const r = await runAction({ "api-key": "good-key", files: "dist/app.tar.gz" }, GITHUB_RUN);
+  assert.equal(r.code, 0, r.stdout);
+  const sent = server.received.slice(before);
+  assert.equal(sent.length, 1);
+  assert.equal(sent[0].repository, "acme/app");
+  assert.equal(sent[0].runId, "42");
+  assert.equal(sent[0].runUrl, "https://github.com/acme/app/actions/runs/42");
+  const report = JSON.parse(await readFile(r.outputs.report, "utf8"));
+  assert.equal(report.ci.repository, "acme/app");
+});
+
+test("a plan without Enterprise is told CI/CD needs it, and the step fails", async () => {
+  const r = await runAction({ "api-key": "premium-key", files: "dist/**", concurrency: "1" }, GITHUB_RUN);
+  assert.equal(r.code, 1);
+  assert.match(r.stdout, /requires an Enterprise plan/);
+  assert.equal(r.outputs.result, "error");
+  // Stopped at the first refusal instead of failing every file the same way.
+  assert.match(r.stdout, /Not scanned/);
 });
 
 test("a missing key fails with a clear message", async () => {

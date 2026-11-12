@@ -1,6 +1,6 @@
 {
   "name": "viruspurge",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "description": "Scan files for malware with the Virus Purge API — from your terminal or CI.",
   "license": "MIT",
   "type": "module",

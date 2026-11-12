@@ -11,8 +11,13 @@ Scan files for malware with the [Virus Purge API](https://viruspurge.com/docs)
 - **CI-friendly.** Exit code `1` when malware is found, a JSON report, and on
   GitHub: annotations plus a job summary.
 
-API access needs a Premium plan (or an organization with an active
-subscription). Get your key from the [API dashboard](https://viruspurge.com/dashboard/api).
+**Requires an Enterprise plan** for use in CI/CD. In a pipeline (GitHub
+Actions, GitLab CI) every scan carries the repository, commit, branch and
+workflow run it came from, and results are organized per repository and run on
+your [CI/CD page](https://viruspurge.com/dashboard/ci). On other plans the API
+refuses pipeline scans (`403 enterprise_required`); outside CI the CLI works
+with any plan that has API access (Premium). Get your key from the
+[API dashboard](https://viruspurge.com/dashboard/api).
 
 ## CLI
 
@@ -62,6 +67,8 @@ Events: `scan.completed`, `scan.infected`, `quota.threshold`. Deliveries are
 signed — see [Verifying signatures](https://viruspurge.com/docs#webhooks).
 
 ## GitHub Action
+
+Requires a Virus Purge **Enterprise** plan.
 
 ```yaml
 - uses: decentralisoft/scan-action@v1

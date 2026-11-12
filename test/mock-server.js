@@ -9,6 +9,7 @@ export async function startMockServer({ rateLimitFirstScan = false } = {}) {
   const scans = new Map();
   const permits = new Map();
   const calls = [];
+  const received = []; // every `ci` context a scan was started with
   let rateLimited = !rateLimitFirstScan;
 
   const send = (res, status, body, headers = {}) => {
@@ -56,14 +57,22 @@ export async function startMockServer({ rateLimitFirstScan = false } = {}) {
 
     if (!url.pathname.startsWith("/api/v1/")) return send(res, 404, { error: "Not found" });
     if (auth === "Bearer free-key") return send(res, 403, { error: "API access requires a Premium subscription." });
-    if (auth !== "Bearer good-key") return send(res, 401, { error: "Invalid API key." });
+    // good-key is on Enterprise; premium-key has the API but not CI/CD.
+    if (auth !== "Bearer good-key" && auth !== "Bearer premium-key") return send(res, 401, { error: "Invalid API key." });
 
     if (url.pathname === "/api/v1/scan" && req.method === "POST") {
       if (!rateLimited) {
         rateLimited = true;
         return send(res, 429, { error: "Rate limit exceeded" }, { "retry-after": "1" });
       }
-      const { fileName, fileSize } = JSON.parse(body);
+      const { fileName, fileSize, ci } = JSON.parse(body);
+      if (ci && auth !== "Bearer good-key") {
+        return send(res, 403, {
+          error: "CI/CD integration (the GitHub Action, and the CLI in a CI pipeline) requires an Enterprise plan.",
+          code: "enterprise_required",
+        });
+      }
+      if (ci) received.push(ci);
       const scanId = randomUUID();
       const permit = `permit-${scanId}`;
       scans.set(scanId, {
@@ -99,6 +108,7 @@ export async function startMockServer({ rateLimitFirstScan = false } = {}) {
     url: base,
     scans,
     calls,
+    received,
     close: () => new Promise((resolve) => server.close(resolve)),
   };
 }

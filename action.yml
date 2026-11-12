@@ -1,5 +1,5 @@
 name: Virus Purge Scan
-description: Scan build outputs and release artifacts for malware with ClamAV, YARA and image-payload checks.
+description: Scan build outputs and release artifacts for malware with ClamAV, YARA and image-payload checks. Requires a Virus Purge Enterprise plan.
 author: Virus Purge
 branding:
   icon: shield
@@ -7,7 +7,7 @@ branding:
 
 inputs:
   api-key:
-    description: Your Virus Purge API key (personal vp_… or organization vpo_…). Store it as a secret.
+    description: A Virus Purge API key on an Enterprise plan (personal vp_… or organization vpo_…). Store it as a secret.
     required: true
   files:
     description: |

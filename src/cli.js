@@ -6,6 +6,7 @@
 import { writeFile } from "node:fs/promises";
 import { relative } from "node:path";
 import { parseArgs } from "node:util";
+import { detectCiContext } from "./ci.js";
 import { createClient, DEFAULT_API_URL } from "./client.js";
 import { expandPatterns } from "./files.js";
 import { scanFiles, summarize, Status } from "./scan.js";
@@ -37,6 +38,8 @@ Global options:
   -v, --version          Show the version
 
 Globs: *, **, ?, [abc], {a,b}; prefix with ! to exclude, e.g. 'dist/**' '!dist/**/*.map'.
+On GitHub Actions and GitLab CI, scans carry the repository, commit and run
+(CI/CD integration — requires an Enterprise plan).
 Exit codes: 0 clean, 1 malware found, 2 error.`;
 
 const OPTIONS = {
@@ -103,7 +106,7 @@ export async function main(argv, io = {}) {
 
     switch (command) {
       case "scan":
-        return await scanCommand(client, rest, opts, { cwd, print, warn });
+        return await scanCommand(client, rest, opts, { cwd, print, warn, ci: detectCiContext(env) });
       case "status": {
         if (rest.length !== 1) throw new UsageError("Usage: viruspurge status <scanId>");
         const scan = await client.getScan(rest[0]);
@@ -121,7 +124,7 @@ export async function main(argv, io = {}) {
   }
 }
 
-async function scanCommand(client, patterns, opts, { cwd, print, warn }) {
+async function scanCommand(client, patterns, opts, { cwd, print, warn, ci }) {
   if (patterns.length === 0) throw new UsageError("Usage: viruspurge scan <path|glob>...");
   const concurrency = positiveInt(opts.concurrency, "concurrency", 4);
   const timeoutMs = positiveInt(opts.timeout, "timeout", 120) * 1000;
@@ -138,11 +141,12 @@ async function scanCommand(client, patterns, opts, { cwd, print, warn }) {
   const results = await scanFiles(client, files, {
     concurrency,
     timeoutMs,
+    ci,
     cwdLabel: label,
     onResult: opts.json ? undefined : (r) => print(formatLine(r)),
   });
   const summary = summarize(results);
-  const report = { version: 1, apiUrl: client.apiUrl, summary, results };
+  const report = { version: 1, apiUrl: client.apiUrl, ...(ci ? { ci } : {}), summary, results };
 
   if (opts.report) await writeFile(opts.report, JSON.stringify(report, null, 2) + "\n");
   if (opts.json) {

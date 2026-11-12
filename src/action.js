@@ -6,6 +6,7 @@
 import { appendFile, writeFile } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { randomUUID } from "node:crypto";
+import { detectCiContext } from "./ci.js";
 import { createClient, DEFAULT_API_URL } from "./client.js";
 import { expandPatterns } from "./files.js";
 import { scanFiles, summarize, Status } from "./scan.js";
@@ -109,10 +110,12 @@ export async function run() {
   }
 
   const label = (f) => relative(cwd, f) || f;
+  const ci = detectCiContext(process.env);
   console.log(`Scanning ${files.length} file${files.length === 1 ? "" : "s"} with Virus Purge…`);
   const results = await scanFiles(client, files, {
     concurrency,
     timeoutMs,
+    ci,
     cwdLabel: label,
     onResult: (r) => {
       if (r.status === Status.INFECTED) {
@@ -127,7 +130,7 @@ export async function run() {
   const summary = summarize(results);
 
   const reportPath = join(process.env.RUNNER_TEMP || cwd, `viruspurge-report-${Date.now()}.json`);
-  await writeFile(reportPath, JSON.stringify({ version: 1, summary, results }, null, 2) + "\n");
+  await writeFile(reportPath, JSON.stringify({ version: 1, ...(ci ? { ci } : {}), summary, results }, null, 2) + "\n");
   await setOutput("result", summary.result);
   await setOutput("scanned", String(summary.scanned));
   await setOutput("infected", String(summary.infected));

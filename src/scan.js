@@ -48,7 +48,7 @@ export async function waitForVerdict(client, scanId, { timeoutMs = 120_000, poll
  * @returns {Promise<{file: string, status: string, scanId?: string, threats: string[],
  *   sha256?: string|null, error?: string, recoveredByPolling?: boolean}>}
  */
-export async function scanFile(client, filePath, { displayName = filePath, timeoutMs, pollMs } = {}) {
+export async function scanFile(client, filePath, { displayName = filePath, timeoutMs, pollMs, ci } = {}) {
   const result = { file: displayName, status: Status.ERROR, threats: [] };
   let info;
   try {
@@ -61,7 +61,7 @@ export async function scanFile(client, filePath, { displayName = filePath, timeo
 
   let permit;
   try {
-    permit = await client.createScan({ fileName: basename(filePath), fileSize: info.size });
+    permit = await client.createScan({ fileName: basename(filePath), fileSize: info.size, ci });
   } catch (err) {
     return { ...result, error: err.message, fatal: isFatal(err) };
   }
@@ -112,7 +112,9 @@ function fromScan(result, scan, recoveredByPolling = false) {
 
 /** Errors that will fail every other file the same way: stop early. */
 function isFatal(err) {
-  return err instanceof ApiError && (err.status === 401 || err.status === 403 || (err.status === 429 && err.retryAfter == null));
+  return (
+    err instanceof ApiError && (err.status === 401 || err.status === 403 || (err.status === 429 && err.retryAfter == null))
+  );
 }
 
 /**
